@@ -69,8 +69,8 @@ app.get('/piedras', async (req, res) => {
 
 });
 
-//Primer endpoint
-app.get('/usos-magicos', async (req, res) => {
+//Segundo endpoint con id
+app.get('/piedras/:id', async (req, res) => {
 
     const conn = await getConnection();
 
@@ -83,9 +83,8 @@ app.get('/usos-magicos', async (req, res) => {
 
     const numOfElements = results.length;
 
-    res.json({
-        results
-
-    });
+    res.json(
+        results [0]
+    );
 
 });
