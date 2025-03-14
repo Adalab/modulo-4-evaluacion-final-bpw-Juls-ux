@@ -50,7 +50,7 @@ app.get('/piedras', async (req, res) => {
     });
 
 });
-//Primer endpoint
+//Primer endpoint todas las piedras mágicas
 app.get('/piedras', async (req, res) => {
 
     const conn = await getConnection();
@@ -86,5 +86,26 @@ app.get('/piedras/:id', async (req, res) => {
     res.json(
         results [0]
     );
+
+});
+
+//Tercer endpoint con las propiedades mágicas
+app.get('/usos-magicos', async (req, res) => {
+
+    const conn = await getConnection();
+
+    const [results] = await conn.query(`
+        
+        SELECT * FROM piedrasmagicas.usos_magicos;`);
+
+    await conn.end();
+
+    const numOfElements = results.length;
+    res.json({
+        info: { count: numOfElements },
+        results: results,
+
+    });
+
 
 });
