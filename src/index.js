@@ -1,5 +1,5 @@
 //MYQSL coenxión
-const mysql = require('mysql2/promise');
+const mysql = require('mysql2');
 
 const express = require('express');
 const cors = require('cors');
@@ -45,7 +45,7 @@ app.get('/piedras', async (req, res) => {
 
     res.json({
         info: { count: numOfElements },
-        results: results,
+        results: results
 
     });
 
@@ -107,5 +107,22 @@ app.get('/usos-magicos', async (req, res) => {
 
     });
 
+});
+
+//Cuarto Endpoint INSERTAR PIEDRA
+app.post('/piedras', async (req, res) => {
+
+    const conn = await getConnection();
+
+    const [results] = await conn.execute(`
+        INSERT INTO piedrasmagicas.piedras (nombre, color, elemento, propiedades) 
+        VALUES (?, ?, ?, ?);`, [req.body.nombre, req.body.color, req.body.elemento, req.body.propiedades]);
+
+    await conn.end();
+
+    res.json({
+        "success": true,
+        "id": results.insertId 
+    });
 
 });
