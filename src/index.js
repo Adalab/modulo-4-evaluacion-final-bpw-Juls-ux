@@ -112,17 +112,28 @@ app.get('/usos-magicos', async (req, res) => {
 //Cuarto Endpoint INSERTAR PIEDRA
 app.post('/piedras', async (req, res) => {
 
-    const conn = await getConnection();
 
-    const [results] = await conn.execute(`
-        INSERT INTO piedrasmagicas.piedras (nombre, color, elemento, propiedades) 
-        VALUES (?, ?, ?, ?);`, [req.body.nombre, req.body.color, req.body.elemento, req.body.propiedades]);
+    try{
 
-    await conn.end();
+        const conn = await getConnection();
 
-    res.json({
-        "success": true,
-        "id": results.insertId 
-    });
+        const [results] = await conn.execute(`
+            INSERT INTO piedrasmagicas.piedras (nombre, color, elemento, propiedades) 
+            VALUES (?, ?, ?, ?);`, [req.body.nombre, req.body.color, req.body.elemento, req.body.propiedades]);
+    
+        await conn.end();
+    
+        res.json({
+            "success": true,
+            "id": results.insertId 
+        });
 
+    }
+    catch(err) {
+        res.status(500).json({
+            "success":false,
+            "message": err.toString()
+
+        })
+    }
 });
