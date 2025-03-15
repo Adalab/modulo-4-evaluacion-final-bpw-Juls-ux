@@ -1,5 +1,5 @@
 //MYQSL coenxión
-const mysql = require('mysql2');
+const mysql = require("mysql2/promise");
 
 const express = require('express');
 const cors = require('cors');
@@ -32,25 +32,7 @@ app.listen(port, () => {
 });
 
 
-//Primer endpoint
-app.get('/piedras', async (req, res) => {
-
-    const conn = await getConnection();
-
-    const [results] = await conn.query(`SELECT * FROM piedrasmagicas.piedras;`);
-
-    await conn.end();
-
-    const numOfElements = results.length;
-
-    res.json({
-        info: { count: numOfElements },
-        results: results
-
-    });
-
-});
-//Primer endpoint todas las piedras mágicas
+//1º endpoint todas las piedras mágicas
 app.get('/piedras', async (req, res) => {
 
     const conn = await getConnection();
@@ -69,7 +51,7 @@ app.get('/piedras', async (req, res) => {
 
 });
 
-//Segundo endpoint con id
+//2º endpoint con id
 app.get('/piedras/:id', async (req, res) => {
 
     const conn = await getConnection();
@@ -84,12 +66,12 @@ app.get('/piedras/:id', async (req, res) => {
     const numOfElements = results.length;
 
     res.json(
-        results [0]
+        results[0]
     );
 
 });
 
-//Tercer endpoint con las propiedades mágicas
+//3º endpoint con las propiedades mágicas
 app.get('/usos-magicos', async (req, res) => {
 
     const conn = await getConnection();
@@ -109,31 +91,97 @@ app.get('/usos-magicos', async (req, res) => {
 
 });
 
-//Cuarto Endpoint INSERTAR PIEDRA
+//4º Endpoint INSERTAR PIEDRA
 app.post('/piedras', async (req, res) => {
 
 
-    try{
+    try {
 
         const conn = await getConnection();
 
         const [results] = await conn.execute(`
             INSERT INTO piedrasmagicas.piedras (nombre, color, elemento, propiedades) 
             VALUES (?, ?, ?, ?);`, [req.body.nombre, req.body.color, req.body.elemento, req.body.propiedades]);
-    
+
         await conn.end();
-    
+
         res.json({
             "success": true,
-            "id": results.insertId 
+            "id": results.insertId
         });
 
     }
-    catch(err) {
+    catch (err) {
         res.status(500).json({
-            "success":false,
+            "success": false,
             "message": err.toString()
 
         })
+    }
+});
+
+
+
+//5º Endpoint MODIFICAR/ACTUALIZAR PIEDRA-->UPDATE
+app.put('/piedras/:id', async (req, res) => {
+
+    try {
+        const piedraId = req.params.id; 
+        const { nombre, color, elemento, propiedades } = req.body;
+
+        // Validar que el ID sea un número válido
+        if (!piedraId || isNaN(parseInt(piedraId))) {
+            return res.status(400).json({
+                success: false,
+                error: 'El ID no es válido'
+            });
+        }
+
+        // Validar que el nombre no esté vacío
+        if (!nombre || nombre.trim() === '') {
+            return res.status(400).json({
+                success: false,
+                error: 'El nombre no es correcto'
+            });
+        }
+
+        // Obtener conexión con la base de datos
+        const conn = await getConnection();
+
+        // Ejecutar la consulta SQL para actualizar
+        const [results, fields] = await conn.execute(
+            `UPDATE piedrasmagicas.piedras 
+             SET nombre = ?, color = ?, elemento = ?, propiedades = ? 
+             WHERE id = ?`,
+            [nombre, color, elemento, propiedades, piedraId]
+        );
+
+        await conn.end();
+
+        // Verificar si se actualizó alguna fila
+        if (results.affectedRows > 0) {
+            res.json({
+                success: true,
+                message: `Piedra con ID ${piedraId} actualizada correctamente`,
+                updatedPiedra: {
+                    id_piedra: piedraId,
+                    nombre,
+                    color,
+                    elemento,
+                    propiedades
+                }
+            });
+        } else {
+            res.status(404).json({
+                success: false,
+                error: `No se encontró una piedra con ID ${piedraId}`
+            });
+        }
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: "Error al actualizar la piedra",
+            details: error.message
+        });
     }
 });
