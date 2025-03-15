@@ -338,10 +338,10 @@ app.get('/usuarias', async (req, res) => {
 app.post('/login', async (req, res) => {
 
   
-    if( !req.body.email ) {
+    if( !req.body.nombre ) {
       return res.status(400).json({
         status: false,
-        error: 'Oye, no has espeficicado el email'
+        error: 'Oye, no has espeficicado el nombre de usuaria'
       })
     }
     if( !req.body.password ) {
@@ -356,8 +356,8 @@ app.post('/login', async (req, res) => {
     const [resultCheck] = await conn.query(
       `SELECT *
       FROM usuarias
-      WHERE email = ?;`,
-      [req.body.email]
+      WHERE nombre = ?;`,
+      [req.body.nombre]
     );
   
     if( resultCheck.length === 0 ) {
@@ -368,14 +368,20 @@ app.post('/login', async (req, res) => {
     }
   
     const [userData] = resultCheck;
-  
-    console.log(userData);
     
     if( await bcrypt.compare(req.body.password, userData.password) ) {
- 
-  
+
+        const payload = {
+            userId: userData.id,
+            email: userData.email,
+            nombre: userData.nombre
+        }
+
+    const token = jwt.sign( payload, process.env.JWT_PASS, { expiresIn:'3h' } );
+
       res.json({
-        success: true
+        success: true,
+        token: token
       })
     }
     else {
