@@ -129,7 +129,7 @@ app.post('/piedras', async (req, res) => {
 app.put('/piedras/:id', async (req, res) => {
 
     try {
-        const piedraId = req.params.id; 
+        const piedraId = req.params.id;
         const { nombre, color, elemento, propiedades } = req.body;
 
         // Validar que el ID sea un número válido
@@ -212,11 +212,11 @@ app.delete('/piedras/:id', async (req, res) => {
             await conn.end();
             return res.status(404).json({ success: false, error: `No se encontró una piedra con ID ${piedraId}` });
         }
-        
+
         await conn.execute(`DELETE FROM piedras_tienen_usos_magicos WHERE piedras_id = ?`, [piedraId]);
         await conn.execute(`DELETE FROM compatibilidades_tienen_piedras WHERE piedras_id = ?`, [piedraId]);
 
-        
+
         const [results, fields] = await conn.execute(
             `DELETE FROM piedrasmagicas.piedras 
             WHERE id = ?`,
@@ -229,7 +229,7 @@ app.delete('/piedras/:id', async (req, res) => {
             res.json({
                 success: true,
                 message: `Piedra con ID ${piedraId} eliminada correctamente`
-         
+
             });
         } else {
             res.status(404).json({
@@ -241,6 +241,71 @@ app.delete('/piedras/:id', async (req, res) => {
         res.status(500).json({
             success: false,
             error: "Error al eliminar la piedra",
+            details: error.message
+        });
+    }
+});
+
+
+//7º Endpoint REGISTRO
+
+app.post('/register', async (req, res) => {
+    try {
+
+        if (req.body.password === undefined || req.body.password === '') {
+            return res.status(400).json({
+                success: false,
+                error: 'Las contraseñas no coinciden'
+            });
+        }
+
+
+        if (req.body.nombre === undefined || req.body.nombre === '') {
+            return res.status(400).json({
+                success: false,
+                error: 'El nombre de usuaria no es correcto'
+            });
+        }
+
+        const conn = await getConnection();
+
+
+        const [resultCheck] = await conn.execute(
+            `SELECT * FROM usuarias WHERE email = ?;`,
+            [req.body.nombre]
+        );
+
+        if (resultCheck.length > 0) {
+            return res.status(409).json({
+                success: false,
+                error: 'La usuaria ya existe'
+            });
+        }
+
+        const hiddenPassword = await bcrypt.hash(req.body.password, saltRounds);
+
+    
+        const [resultInsert] = await conn.execute(
+            `INSERT INTO usuarias (email, nombre, password) VALUES (?, ?, ?);`,
+            [req.body.email, req.body.nombre, hiddenPassword]
+        );
+
+        await conn.end();
+
+        // Responder con éxito y los datos de la nueva usuaria
+        res.json({
+            success: true,
+            id: resultInsert.insertId,
+            user: {
+                id_usuaria: resultInsert.insertId,
+                email: req.body.email,
+                nombre: req.body.nombre
+            }
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: 'Error al registrar la usuaria',
             details: error.message
         });
     }
