@@ -185,3 +185,60 @@ app.put('/piedras/:id', async (req, res) => {
         });
     }
 });
+
+
+
+
+//6º Endpoint ELIMINAR PIEDRA MÁGICA
+app.delete('/piedras/:id', async (req, res) => {
+
+    try {
+        const piedraId = parseInt(req.params.id);
+
+        // Validar que el ID sea un número válido
+        if (!piedraId || isNaN(piedraId)) {
+            return res.status(400).json({
+                success: false,
+                error: 'El ID no es válido'
+            });
+        }
+        const conn = await getConnection();
+
+        const [exist] = await conn.execute(`SELECT id FROM piedrasmagicas.piedras WHERE id = ?`, [piedraId]);
+        if (exist.length === 0) {
+            await conn.end();
+            return res.status(404).json({ success: false, error: `No se encontró una piedra con ID ${piedraId}` });
+        }
+        
+        await conn.execute(`DELETE FROM piedras_tienen_usos_magicos WHERE piedras_id = ?`, [piedraId]);
+        await conn.execute(`DELETE FROM compatibilidades_tienen_piedras WHERE piedras_id = ?`, [piedraId]);
+
+        
+        const [results, fields] = await conn.execute(
+            `DELETE FROM piedrasmagicas.piedras 
+            WHERE id = ?`,
+            [piedraId]
+        );
+
+        await conn.end();
+
+        if (results.affectedRows > 0) {
+            res.json({
+                success: true,
+                message: `Piedra con ID ${piedraId} eliminada correctamente`
+         
+            });
+        } else {
+            res.status(404).json({
+                success: false,
+                error: `No se encontró una piedra con ID ${piedraId}`
+            });
+        }
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: "Error al eliminar la piedra",
+            details: error.message
+        });
+    }
+});
