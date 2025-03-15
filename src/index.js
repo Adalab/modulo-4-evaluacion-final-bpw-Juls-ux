@@ -4,7 +4,7 @@ const mysql = require("mysql2/promise");
 const express = require('express');
 const cors = require('cors');
 require("dotenv").config();
-
+const jwt = require('jsonwebtoken'); 
 const bcrypt = require('bcryptjs');
 require('dotenv').config();
 
@@ -283,7 +283,7 @@ app.post('/register', async (req, res) => {
 
         const hiddenPassword = await bcrypt.hash(req.body.password, saltRounds);
 
-    
+
         const [resultInsert] = await conn.execute(
             `INSERT INTO usuarias (email, nombre, password) VALUES (?, ?, ?);`,
             [req.body.email, req.body.nombre, hiddenPassword]
@@ -328,5 +328,63 @@ app.get('/usuarias', async (req, res) => {
         results: results,
 
     });
+
+});
+
+
+//9º Endpoint LOGIN
+
+app.post('/login', async (req, res) => {
+
+    try {
+
+        if (!req.body.email) {
+            return res.status(400).json({
+                success: false,
+                error: 'Oye, no has especificado email'
+            });
+        }
+
+
+        if (!req.body.password) {
+            return res.status(400).json({
+                success: false,
+                error: 'Oye, no has especificado contraseña'
+            });
+        }
+
+        const conn = await getConnection();
+
+
+        const [resultCheck] = await conn.execute(
+            `SELECT *
+            FROM usuarias
+            WHERE email = ?;`,
+            [req.body.email]
+        );
+
+        if (resultCheck.length === 0) {
+            return res.status(409).json({
+                success: false,
+                error: 'No son válidas tus credenciales'
+            });
+        }
+
+        const [userData] = resultCheck;
+
+
+        if( await bcrypt.compare(req.body.contraseña, userData.contraseña) ) {
+            // Generar el JWT.
+        
+            res.json({
+              success: true
+            })
+          }
+          else {
+            return res.status(404).json({
+              status: false,
+              error: 'Las credenciales no son válidas'
+            });
+            } 
 
 });
