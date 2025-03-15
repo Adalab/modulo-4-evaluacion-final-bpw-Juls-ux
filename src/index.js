@@ -6,6 +6,7 @@ const cors = require('cors');
 require("dotenv").config();
 const jwt = require('jsonwebtoken'); 
 const bcrypt = require('bcryptjs');
+const saltRounds= 10;
 require('dotenv').config();
 
 async function getConnection() {
@@ -286,7 +287,7 @@ app.post('/register', async (req, res) => {
 
         const [resultInsert] = await conn.execute(
             `INSERT INTO usuarias (email, nombre, password) VALUES (?, ?, ?);`,
-            [req.body.email, req.body.nombre, hiddenPassword]
+            [req.body.nombre, req.body.nombre, hiddenPassword]
         );
 
         await conn.end();
@@ -336,55 +337,52 @@ app.get('/usuarias', async (req, res) => {
 
 app.post('/login', async (req, res) => {
 
-    try {
-
-        if (!req.body.email) {
-            return res.status(400).json({
-                success: false,
-                error: 'Oye, no has especificado email'
-            });
-        }
-
-
-        if (!req.body.password) {
-            return res.status(400).json({
-                success: false,
-                error: 'Oye, no has especificado contraseña'
-            });
-        }
-
-        const conn = await getConnection();
-
-
-        const [resultCheck] = await conn.execute(
-            `SELECT *
-            FROM usuarias
-            WHERE email = ?;`,
-            [req.body.email]
-        );
-
-        if (resultCheck.length === 0) {
-            return res.status(409).json({
-                success: false,
-                error: 'No son válidas tus credenciales'
-            });
-        }
-
-        const [userData] = resultCheck;
-
-
-        if( await bcrypt.compare(req.body.contraseña, userData.contraseña) ) {
-            // Generar el JWT.
-        
-            res.json({
-              success: true
-            })
-          }
-          else {
-            return res.status(404).json({
-              status: false,
-              error: 'Las credenciales no son válidas'
-            });
-            } 
-
+  
+    if( !req.body.email ) {
+      return res.status(400).json({
+        status: false,
+        error: 'Oye, no has espeficicado el email'
+      })
+    }
+    if( !req.body.password ) {
+      return res.status(400).json({
+        status: false,
+        error: 'Oye, no has espeficicado la contraseña'
+      })
+    }
+  
+    const conn = await getConnection();
+  
+    const [resultCheck] = await conn.query(
+      `SELECT *
+      FROM usuarias
+      WHERE email = ?;`,
+      [req.body.email]
+    );
+  
+    if( resultCheck.length === 0 ) {
+      return res.status(404).json({
+        status: false,
+        error: 'Las credenciales no son válidas'
+      })
+    }
+  
+    const [userData] = resultCheck;
+  
+    console.log(userData);
+    
+    if( await bcrypt.compare(req.body.password, userData.password) ) {
+ 
+  
+      res.json({
+        success: true
+      })
+    }
+    else {
+      return res.status(404).json({
+        status: false,
+        error: 'Las credenciales no son válidas'
+      });
+    }
+  
 });
