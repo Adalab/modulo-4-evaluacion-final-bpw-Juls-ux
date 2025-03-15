@@ -191,7 +191,6 @@ app.put('/piedras/:id', async (req, res) => {
 
 
 
-
 //6º Endpoint ELIMINAR PIEDRA MÁGICA
 app.delete('/piedras/:id', async (req, res) => {
 
@@ -309,4 +308,25 @@ app.post('/register', async (req, res) => {
             details: error.message
         });
     }
+});
+
+
+//8º Endpoint USUARIAS
+app.get('/usuarias', async (req, res) => {
+
+    const conn = await getConnection();
+
+    const [results] = await conn.query(`
+        
+        SELECT * FROM piedrasmagicas.usuarias;`);
+
+    await conn.end();
+
+    const numOfElements = results.length;
+    res.json({
+        info: { count: numOfElements },
+        results: results,
+
+    });
+
 });
