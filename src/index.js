@@ -5,6 +5,9 @@ const express = require('express');
 const cors = require('cors');
 require("dotenv").config();
 
+const bcrypt = require('bcryptjs');
+require('dotenv').config();
+
 async function getConnection() {
     const connectionData = {
         host: process.env["MYSQL_HOST"],
